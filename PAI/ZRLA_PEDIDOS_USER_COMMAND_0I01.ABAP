@@ -25,17 +25,37 @@ endmodule.
 
 form get_data.
 
+  "limpa a tabela de pedidos
   clear it_pedidos.
 
+  "se nenhum id for selecionado
   if in_id is initial.
-    it_pedidos = zcl_pedidos=>load_pedidos( ).
+    it_pedidos = zcl_pedidos=>load_pedidos( ). "carrega toda a tabela
+
+    if it_pedidos is initial.
+      message | Não houveram dados retornados da tabela | type 'S' display like 'E'.
+    else.
+      message | { lines( it_pedidos ) } Registos retornados. | type 'S'.
+    endif.
+
+  "se um id for escolhido
   else.
-    ol_pedidos->construtor(
-        id = in_id
+    ol_pedidos->construtor( "invoca o método constructor
+      exporting
+        id     = in_id
+      importing
+        e_result = result
     ).
 
-    ls_pedidos = ol_pedidos->ls_pedido.
-    append ls_pedidos to it_pedidos.
+    "se nao for achada uma linha na tabela pertinente ao id...
+    if result-rc ne 0.
+      message result-mensagem type 'S' display like 'E'.
+
+    "se uma linha for retornada correspondente ao id...
+    else.
+      ls_pedidos = ol_pedidos->ls_pedido. "recebe a estrutura advinda do atributo de classe
+      append ls_pedidos to it_pedidos.    "insere a estrutura na tabela
+    endif.
   endif.
 
 endform.
@@ -44,6 +64,7 @@ form build_catalog.
 
   refresh it_fieldcat.
 
+  "metodo para construir um catalogo de campos
   zcl_pedidos=>build_catalog_pedidos(
     importing
       fieldcatalog = it_fieldcat
