@@ -9,7 +9,7 @@
 data: okcode100 type sy-ucomm.
 
 "campos de entrada
-data: in_id type int4. "campo id"
+data: in_id type zpedidos-id_pedido. "campo id"
 
 "-------------------------------------------------------------------------------
 "BASE DE DADOS --
@@ -35,4 +35,7 @@ data it_fieldcat type lvc_t_fcat .                      "catalogo de campos
 "pedidos
 data ol_pedidos type ref to zcl_pedidos.
 
-"---------------------------------------------------------------------------------
+"-------------------------------------------------------------------------------
+"OUTROS
+
+data: result type zapr_result. "estrutura para retorno de operacoes
