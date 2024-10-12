@@ -10,7 +10,7 @@ module user_command_0100 input.
 
   case okcode100.
 
-    when 'FCT_BUSCAR'.
+    when 'FCT_BUSCAR'..
 
       create object ol_pedidos. "cria um objeto da classe de pedidos.
 
