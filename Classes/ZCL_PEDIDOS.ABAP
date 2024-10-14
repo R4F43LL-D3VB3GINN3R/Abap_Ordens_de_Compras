@@ -20,15 +20,15 @@ class zcl_pedidos definition
     class-methods build_catalog_pedidos
       exporting
         !fieldcatalog type lvc_t_fcat .
-    class-methods insert_pedido
+    methods insert_pedido
       importing
-        !nome     type zpedidos-nome_cliente
+        !nome     type zclientes-nome_cliente
         !valor    type zpedidos-valor_total
       exporting
         !e_result type zapr_result .
     class-methods edit_pedido
       importing
-        !nome      type zpedidos-nome_cliente
+        !nome      type zclientes-nome_cliente
         !valor     type zpedidos-valor_total
         !status    type zpedidos-status
         !indexline type sy-index
@@ -80,7 +80,7 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
     append ls_fieldcat to fieldcatalog.
 
     clear ls_fieldcat.
-    ls_fieldcat-fieldname = 'NOME_CLIENTE'.
+    ls_fieldcat-fieldname = 'ID_CLIENTE'.
     ls_fieldcat-inttype   = 'C'.
     ls_fieldcat-outputlen =  25.
     ls_fieldcat-coltext   = 'Nome do Cliente'.
@@ -149,7 +149,7 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
 * <SIGNATURE>---------------------------------------------------------------------------------------+
 * | Static Public Method ZCL_PEDIDOS=>EDIT_PEDIDO
 * +-------------------------------------------------------------------------------------------------+
-* | [--->] NOME                           TYPE        ZPEDIDOS-NOME_CLIENTE
+* | [--->] NOME                           TYPE        ZCLIENTES-NOME_CLIENTE
 * | [--->] VALOR                          TYPE        ZPEDIDOS-VALOR_TOTAL
 * | [--->] STATUS                         TYPE        ZPEDIDOS-STATUS
 * | [--->] INDEXLINE                      TYPE        SY-INDEX
@@ -157,29 +157,29 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method edit_pedido.
 
-    data: id_pedido4 type zpedidos-id_pedido.     "id do pedido
-    data: data_pedido4 type zpedidos-data_inicio. "data do pedido
-    data: ls_pedido4 type zpedidos.               "estrutura do pedido
-
-    id_pedido4   = zcl_pedidos=>get_id( indexline = indexline ).          "recebe o id do pedido
-    data_pedido4 = zcl_pedidos=>get_data_pedido( indexline = indexline ). "recebe a data do pedido
-
-    "preenche a estrutura
-    ls_pedido4-id_pedido    = id_pedido4.
-    ls_pedido4-nome_cliente = nome.
-    ls_pedido4-valor_total  = valor.
-    ls_pedido4-status       = status.
-    ls_pedido4-data_inicio  = data_pedido4.
-
-    modify zpedidos from ls_pedido4. "altera o pedido na base de dados
-
-    if sy-subrc eq 0.
-      e_result-rc = sy-subrc.
-      e_result-mensagem = | Informações do pedido alteradas com sucesso  |.
-    else.
-      e_result-rc = sy-subrc.
-      e_result-mensagem = | Não foi possível realizar as alterações  |.
-    endif.
+*    data: id_pedido4 type zpedidos-id_pedido.     "id do pedido
+*    data: data_pedido4 type zpedidos-data_inicio. "data do pedido
+*    data: ls_pedido4 type zpedidos.               "estrutura do pedido
+*
+*    id_pedido4   = zcl_pedidos=>get_id( indexline = indexline ).          "recebe o id do pedido
+*    data_pedido4 = zcl_pedidos=>get_data_pedido( indexline = indexline ). "recebe a data do pedido
+*
+*    preenche a estrutura
+*    ls_pedido4-id_pedido    = id_pedido4.
+*    ls_pedido4-nome_cliente = nome.
+*    ls_pedido4-valor_total  = valor.
+*    ls_pedido4-status       = status.
+*    ls_pedido4-data_inicio  = data_pedido4.
+*
+*    modify zpedidos from ls_pedido4. "altera o pedido na base de dados
+*
+*    if sy-subrc eq 0.
+*      e_result-rc = sy-subrc.
+*      e_result-mensagem = | Informações do pedido alteradas com sucesso  |.
+*    else.
+*      e_result-rc = sy-subrc.
+*      e_result-mensagem = | Não foi possível realizar as alterações  |.
+*    endif.
 
   endmethod.
 
@@ -239,9 +239,9 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Static Public Method ZCL_PEDIDOS=>INSERT_PEDIDO
+* | Instance Public Method ZCL_PEDIDOS->INSERT_PEDIDO
 * +-------------------------------------------------------------------------------------------------+
-* | [--->] NOME                           TYPE        ZPEDIDOS-NOME_CLIENTE
+* | [--->] NOME                           TYPE        ZCLIENTES-NOME_CLIENTE
 * | [--->] VALOR                          TYPE        ZPEDIDOS-VALOR_TOTAL
 * | [<---] E_RESULT                       TYPE        ZAPR_RESULT
 * +--------------------------------------------------------------------------------------</SIGNATURE>
@@ -250,10 +250,30 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
     data: id_pedido  type zpedidos-id_pedido,
           ls_pedido2 type zpedidos.
 
+    data: ol_cliente type ref to zcl_clientes.
+
     id_pedido = zcl_pedidos=>get_next( ). "método de auto incremento
 
+    "o cliente é criado no momento da criacao do pedido
+    "tem de se criar o cliente antes do pedido
+
+    create object ol_cliente.
+
+    "metodo para cadastrar novos clientes.
+    ol_cliente->insert_cliente(
+      exporting
+        nome_cliente = nome
+      importing
+        e_result     = e_result
+    ).
+
+    if sy-subrc ne 0.
+      return.
+    endif.
+
+    "preenche a estrutura com os dados
     ls_pedido2-id_pedido    = id_pedido.
-    ls_pedido2-nome_cliente = nome.
+    ls_pedido2-id_cliente   = ol_cliente->ls_clientes-id_cliente. "recebe o id do cliente cadastrado
     ls_pedido2-valor_total  = valor.
     ls_pedido2-data_inicio  = sy-datum.
     ls_pedido2-status       = 'PENDENTE'.
@@ -263,10 +283,14 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
     if sy-subrc eq 0.
       e_result-rc = sy-subrc.
       e_result-mensagem = 'Novo pedido inserido com sucesso'.
+
+      me->ls_pedido = ls_pedido2. "passa os dados do cliente para o atributo
     else.
       e_result-rc = sy-subrc.
       e_result-mensagem = 'Não foi possível inserir um novo pedido'.
     endif.
+
+    free ol_cliente.
 
   endmethod.
 
