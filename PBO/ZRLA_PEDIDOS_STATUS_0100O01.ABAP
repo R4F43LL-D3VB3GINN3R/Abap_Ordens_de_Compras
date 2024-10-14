@@ -11,11 +11,6 @@ module status_0100 output.
  SET PF-STATUS 'ZSTATUS_PEDIDOS'.
  SET TITLEBAR 'xxx'.
 
-  case okcode100.
-
-    when 'BACK'.
-     leave program.
-
-  endcase.
+ perform display_alv_container. "exibe o alv no container
 
 endmodule.
