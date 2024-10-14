@@ -5,8 +5,9 @@ class zcl_clientes definition
 
   public section.
 
-    data it_clientes type table of zclientes .
-    data ls_clientes type zclientes .
+    data:
+      it_clientes type table of zclientes_tt,
+      ls_clientes type zclientes.
 
     methods construtor
       importing
@@ -19,16 +20,21 @@ class zcl_clientes definition
     class-methods build_catalog_clientes
       exporting
         !fieldcatalog type lvc_t_fcat .
-  protected section.
-  private section.
     class-methods get_next
       returning
         value(id) type zclientes-id_cliente .
-endclass.
+    methods insert_cliente
+      importing
+        !nome_cliente type zclientes-nome_cliente
+      exporting
+        !e_result     type zapr_result .
+  protected section.
+  private section.
+ENDCLASS.
 
 
 
-class zcl_clientes implementation.
+CLASS ZCL_CLIENTES IMPLEMENTATION.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
@@ -112,8 +118,9 @@ class zcl_clientes implementation.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
-* | Instance Private Method ZCL_CLIENTES->GET_NEXT
+* | Static Public Method ZCL_CLIENTES=>GET_NEXT
 * +-------------------------------------------------------------------------------------------------+
+* | [<-()] ID                             TYPE        ZCLIENTES-ID_CLIENTE
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method get_next.
 
@@ -122,6 +129,52 @@ class zcl_clientes implementation.
       into id.
 
     add 1 to id.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_CLIENTES->INSERT_CLIENTE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] NOME_CLIENTE                   TYPE        ZCLIENTES-NOME_CLIENTE
+* | [<---] E_RESULT                       TYPE        ZAPR_RESULT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method insert_cliente.
+
+    data: ls_cliente type zclientes. "dados do cliente
+
+    ls_cliente-id_cliente     = zcl_clientes=>get_next( ). "auto incremento da chave do cliente
+    ls_cliente-nome_cliente   = nome_cliente.
+    ls_cliente-data_inscricao = sy-datum.
+    ls_cliente-status         = 'ATIVO'.
+
+    "verifica se faltam dados do cliente
+    if ls_cliente-id_cliente     is initial or
+       ls_cliente-nome_cliente   is initial or
+       ls_cliente-data_inscricao is initial or
+       ls_cliente-status         is initial.
+
+      e_result-rc       = 1.
+      e_result-mensagem = 'Dados ausentes na inscrição de um novo cliente'.
+
+    else. "se estiver tudo ok com os dados...
+
+      insert zclientes from ls_cliente. "insere na tabela
+
+      "se inserir na base de dados...
+      if sy-subrc eq 0.
+        e_result-rc = sy-subrc.
+        e_result-mensagem = 'Cliente Cadastrado'.
+
+        me->ls_clientes = ls_cliente.
+
+      else.
+        e_result-rc = sy-subrc.
+        e_result-mensagem = 'Não foi possível cadastrar o cliente'.
+        return.
+      endif.
+
+    endif.
 
   endmethod.
 
@@ -141,4 +194,4 @@ class zcl_clientes implementation.
     sort clientes by id_cliente.
 
   endmethod.
-endclass.
+ENDCLASS.
