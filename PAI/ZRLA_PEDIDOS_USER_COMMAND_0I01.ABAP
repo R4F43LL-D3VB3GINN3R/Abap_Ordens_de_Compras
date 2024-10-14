@@ -10,7 +10,10 @@ module user_command_0100 input.
 
   case okcode100.
 
-    when 'FCT_BUSCAR'..
+    when 'BACK'.
+     leave program.
+
+    when 'FCT_BUSCAR'.
 
       create object ol_pedidos. "cria um objeto da classe de pedidos.
 
@@ -18,6 +21,12 @@ module user_command_0100 input.
       perform build_catalog.         "construcao do catálogo de campos
       perform build_container.       "contrói o container
       perform display_alv_container. "exibe o alv no container
+
+    when 'FCT_NOVO_PEDIDO'.
+      call screen '200'. "chama a tela de cadastro de pedidos
+
+    when 'FCT_DETALHES'.
+      perform get_lines_alv.
 
   endcase.
 
@@ -32,6 +41,8 @@ form get_data.
   if in_id is initial.
     it_pedidos = zcl_pedidos=>load_pedidos( ). "carrega toda a tabela
 
+    sort it_pedidos by id_pedido ascending.
+
     if it_pedidos is initial.
       message | Não houveram dados retornados da tabela | type 'S' display like 'E'.
     else.
@@ -40,7 +51,7 @@ form get_data.
 
   "se um id for escolhido
   else.
-    ol_pedidos->construtor( "invoca o método constructor
+    ol_pedidos->construtor( "invoca o método constructor que retorna uma linha da tabela de pedidos
       exporting
         id     = in_id
       importing
@@ -67,7 +78,7 @@ form build_catalog.
   "metodo para construir um catalogo de campos
   zcl_pedidos=>build_catalog_pedidos(
     importing
-      fieldcatalog = it_fieldcat
+      fieldcatalog = it_fieldcat "recebe o catálogo
   ).
 
 endform.
@@ -108,19 +119,52 @@ endform.
 
 form display_alv_container.
 
-  "metodo para receber o container com alv
-  call method ol_alvgrid->set_table_for_first_display
-    exporting
-      is_layout       = ls_layout
-    changing
-      it_outtab       = it_pedidos
-      it_fieldcatalog = it_fieldcat
-    exceptions
-      others          = 1.
+  if ol_alvgrid is not initial.
 
-  "atualiza o alv
-  call method ol_alvgrid->refresh_table_display
-    exceptions
-      others = 1.
+    ls_layout-box_fname = 'CHECKBOX'. " Habilita checkbox para seleção de linha
+    ls_layout-sel_mode  = 'A'.        " Habilita a seleção de múltiplas linhas
+
+    "metodo para receber o container com alv
+    call method ol_alvgrid->set_table_for_first_display
+      exporting
+        is_layout       = ls_layout
+      changing
+        it_outtab       = it_pedidos
+        it_fieldcatalog = it_fieldcat
+      exceptions
+        others          = 1.
+
+    "atualiza o alv
+    call method ol_alvgrid->refresh_table_display
+      exceptions
+        others = 1.
+
+  endif.
+
+endform.
+
+form get_lines_alv.
+
+  if ol_alvgrid is not initial.
+
+    refresh lt_rows.
+
+    "metodo para pegar os campos selecionados na alv
+    call method ol_alvgrid->get_selected_rows
+      importing
+        et_index_rows = lt_rows.
+
+    if lines( lt_rows ) gt 1 or lines( lt_rows ) eq 0.
+      message 'Escolha um pedido por vês para realizar alterações' type 'I'.
+      return.
+    else.
+      call screen '300'. "chama a tela de edição de pedidos
+    endif.
+
+  else.
+
+    message 'Carregue a lista de pedidos' type 'I'.
+
+  endif.
 
 endform.
