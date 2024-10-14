@@ -1,34 +1,34 @@
-class ZCL_CLIENTES definition
+class zcl_clientes definition
   public
   final
   create public .
 
-public section.
+  public section.
 
-  data IT_CLIENTES type table of ZCLIENTES .
-  data LS_CLIENTES type ZCLIENTES .
+    data it_clientes type table of zclientes .
+    data ls_clientes type zclientes .
 
-  methods construtor
-    importing
-      !ID type ZCLIENTES-ID_CLIENTE
-    exporting
-      !E_RESULT type ZAPR_RESULT .
-  class-methods load_clientes
+    methods construtor
+      importing
+        !id       type zclientes-id_cliente
+      exporting
+        !e_result type zapr_result .
+    class-methods load_clientes
       returning
         value(clientes) type zclientes_tt .
-  class-methods build_catalog_clientes
+    class-methods build_catalog_clientes
       exporting
         !fieldcatalog type lvc_t_fcat .
-protected section.
-private section.
-  class-methods get_next
+  protected section.
+  private section.
+    class-methods get_next
       returning
         value(id) type zclientes-id_cliente .
-ENDCLASS.
+endclass.
 
 
 
-CLASS ZCL_CLIENTES IMPLEMENTATION.
+class zcl_clientes implementation.
 
 
 * <SIGNATURE>---------------------------------------------------------------------------------------+
@@ -141,4 +141,4 @@ CLASS ZCL_CLIENTES IMPLEMENTATION.
     sort clientes by id_cliente.
 
   endmethod.
-ENDCLASS.
+endclass.
