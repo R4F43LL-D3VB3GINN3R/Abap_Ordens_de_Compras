@@ -34,39 +34,33 @@ endmodule.
 
 form get_data.
 
-  "limpa a tabela de pedidos
-  clear it_pedidos.
+  "limpa a tabela de pedidos de clientes
+  refresh it_pedidos_clientes.
 
   "se nenhum id for selecionado
   if in_id is initial.
-    it_pedidos = zcl_pedidos=>load_pedidos( ). "carrega toda a tabela
 
-    sort it_pedidos by id_pedido ascending.
+    "invoca o método sem passar o id do pedido opcional
+    it_pedidos_clientes = zcl_pedidos=>load_pedidos_clientes(
+*                              id_pedido =
+                          ). "carrega toda a tabela
 
-    if it_pedidos is initial.
+    sort it_pedidos_clientes by id_pedido ascending.
+
+    if it_pedidos_clientes is initial.
       message | Não houveram dados retornados da tabela | type 'S' display like 'E'.
     else.
-      message | { lines( it_pedidos ) } Registos retornados. | type 'S'.
+      message | { lines( it_pedidos_clientes ) } Registos retornados. | type 'S'.
     endif.
 
   "se um id for escolhido
   else.
-    ol_pedidos->construtor( "invoca o método constructor que retorna uma linha da tabela de pedidos
-      exporting
-        id     = in_id
-      importing
-        e_result = result
-    ).
 
-    "se nao for achada uma linha na tabela pertinente ao id...
-    if result-rc ne 0.
-      message result-mensagem type 'S' display like 'E'.
+    "invoca o método passando o parametro opcional
+    it_pedidos_clientes = zcl_pedidos=>load_pedidos_clientes(
+                              id_pedido = in_id
+                          ). "carrega a tabela com uma linha
 
-    "se uma linha for retornada correspondente ao id...
-    else.
-      ls_pedidos = ol_pedidos->ls_pedido. "recebe a estrutura advinda do atributo de classe
-      append ls_pedidos to it_pedidos.    "insere a estrutura na tabela
-    endif.
   endif.
 
 endform.
@@ -129,7 +123,7 @@ form display_alv_container.
       exporting
         is_layout       = ls_layout
       changing
-        it_outtab       = it_pedidos
+        it_outtab       = it_pedidos_clientes
         it_fieldcatalog = it_fieldcat
       exceptions
         others          = 1.
