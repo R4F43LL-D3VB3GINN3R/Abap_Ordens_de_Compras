@@ -11,15 +11,16 @@ module status_0200 output.
  SET PF-STATUS 'ZSTATUS_PEDIDOS'.
  SET TITLEBAR 'xxx'.
 
- perform fill_dropdown_clientes.
+ perform fill_dropdown_clientes.      "preenche a dropdown com os nomes dos clientes
+ perform display_alv_container_itens. "visualiza o alv container de itens
 
 endmodule.
 
 form fill_dropdown_clientes.
 
-"tabela usada guardar os dados da dropdown
-*  data: it_list type vrm_values,
-*        ls_list like line of it_list.
+  "tabela usada guardar os dados da dropdown
+*    data: it_list type vrm_values,
+*          ls_list like line of it_list.
 
   types: begin of wa_ddown,
          id_cliente   type zclientes-id_cliente,
