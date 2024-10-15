@@ -24,11 +24,11 @@ form fill_fields.
     new_index2 = ls_rows-index. "recebe o numero da linha selecionada
 
   "procura a linha referente ao pedido na base de dados
-  read table it_pedidos into ls_pedidos index new_index2.
+  read table it_pedidos_clientes into ls_pedidos_clientes index new_index2.
 
     "preenche os campos com os valores da linha
-    in_nome_cliente2 = ls_pedidos-nome_cliente.
-    in_valor_total2  = ls_pedidos-valor_total.
-    in_status2       = ls_pedidos-status.
+    in_nome_cliente2 = ls_pedidos_clientes-nome_cliente.
+    in_valor_total2  = ls_pedidos_clientes-valor_total.
+    in_status2       = ls_pedidos_clientes-status.
 
 endform.
