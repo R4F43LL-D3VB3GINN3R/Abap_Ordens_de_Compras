@@ -17,7 +17,6 @@ module user_command_0100 input.
 
       create object ol_pedidos. "cria um objeto da classe de pedidos.
 
-      perform get_data.              "consulta a base de dados
       perform build_catalog.         "construcao do catálogo de campos
       perform build_container.       "contrói o container
       perform display_alv_container. "exibe o alv no container
@@ -115,8 +114,12 @@ form display_alv_container.
 
   if ol_alvgrid is not initial.
 
+    perform get_data. "preenche a tabela com os dados atualizados da base de dados
+
+    "constrói o layout
     ls_layout-box_fname = 'CHECKBOX'. " Habilita checkbox para seleção de linha
     ls_layout-sel_mode  = 'A'.        " Habilita a seleção de múltiplas linhas
+    ls_layout-zebra     = 'X'.        " Habilita modo de visualização Zebra
 
     "metodo para receber o container com alv
     call method ol_alvgrid->set_table_for_first_display
