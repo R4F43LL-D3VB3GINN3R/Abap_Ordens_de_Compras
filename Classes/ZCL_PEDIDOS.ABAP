@@ -34,6 +34,11 @@ class zcl_pedidos definition
         !indexline type sy-index
       exporting
         !e_result  type zapr_result .
+    class-methods load_pedidos_clientes
+      importing
+        id_pedido               type zpedidos-id_pedido optional
+      returning
+        value(pedidos_clientes) type zpedidos_clientes_tt .
   protected section.
   private section.
 
@@ -80,7 +85,7 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
     append ls_fieldcat to fieldcatalog.
 
     clear ls_fieldcat.
-    ls_fieldcat-fieldname = 'ID_CLIENTE'.
+    ls_fieldcat-fieldname = 'NOME_CLIENTE'.
     ls_fieldcat-inttype   = 'C'.
     ls_fieldcat-outputlen =  25.
     ls_fieldcat-coltext   = 'Nome do Cliente'.
@@ -284,7 +289,7 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
       e_result-rc = sy-subrc.
       e_result-mensagem = 'Novo pedido inserido com sucesso'.
 
-      me->ls_pedido = ls_pedido2. "passa os dados do cliente para o atributo
+      me->ls_pedido = ls_pedido2. "passa os dados do pedido para o atributo
     else.
       e_result-rc = sy-subrc.
       e_result-mensagem = 'Não foi possível inserir um novo pedido'.
@@ -308,6 +313,46 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
       into table pedidos.
 
     sort pedidos by id_pedido.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_PEDIDOS=>LOAD_PEDIDOS_CLIENTES
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] ID_PEDIDO                      TYPE        ZPEDIDOS-ID_PEDIDO(optional)
+* | [<-()] PEDIDOS_CLIENTES               TYPE        ZPEDIDOS_CLIENTES_TT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method load_pedidos_clientes.
+
+    if id_pedido is initial.
+
+      "retorna a tabela com todos os dados
+      select p~id_pedido,
+             c~nome_cliente,
+             p~valor_total,
+             p~data_inicio,
+             p~status
+        from zpedidos as p
+        inner join zclientes as c
+        on p~id_cliente eq c~id_cliente
+        into table @pedidos_clientes.
+
+     else.
+
+        "retorna a tabela com uma linha
+        select p~id_pedido,
+               c~nome_cliente,
+               p~valor_total,
+               p~data_inicio,
+               p~status
+          from zpedidos as p
+          inner join zclientes as c
+          on p~id_cliente eq c~id_cliente
+          into table @pedidos_clientes
+          where id_pedido eq @id_pedido.
+
+      endif.
 
   endmethod.
 ENDCLASS.
