@@ -5,8 +5,7 @@ class zcl_itens definition
 
   public section.
 
-    data:
-      it_itens type zitens_tt .
+    data it_itens type zitens_tt .
     data ls_itens type zitens_st .
     "catalogo de campos
     data it_fieldcat_itens type zfieldcat_itens_tt .
@@ -36,8 +35,11 @@ class zcl_itens definition
         !valor_total type currency
         !result      type zapr_result .
     methods insert_item
+      importing
+        !id_pedido   type zitens-id_pedido
+        !itens_table type zfieldcat_itens_tt
       exporting
-        !result      type zapr_result.
+        !result      type zapr_result .
   protected section.
   private section.
 
@@ -202,20 +204,30 @@ CLASS ZCL_ITENS IMPLEMENTATION.
 * <SIGNATURE>---------------------------------------------------------------------------------------+
 * | Instance Public Method ZCL_ITENS->INSERT_ITEM
 * +-------------------------------------------------------------------------------------------------+
+* | [--->] ID_PEDIDO                      TYPE        ZITENS-ID_PEDIDO
+* | [--->] ITENS_TABLE                    TYPE        ZFIELDCAT_ITENS_TT
 * | [<---] RESULT                         TYPE        ZAPR_RESULT
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method insert_item.
 
+    "recebe por norma o id default auto incrementado
+    data: id_item type zitens-id_item.
+    id_item = zcl_itens=>get_next( ).
+
     "iteramos sobre o atributo tabela que já foi preenchido pelo método add_item_catalog
-    loop at me->it_fieldcat_itens into me->ls_fieldcat_itens.
+    loop at itens_table into me->ls_fieldcat_itens.
 
       "a partir desta tabela preenchemos a estrutura da classe
-      me->ls_itens-id_item   = zcl_itens=>get_next( ).
+      me->ls_itens-id_item   = id_item.
+      me->ls_itens-id_pedido = id_pedido.
       me->ls_itens-descricao = me->ls_fieldcat_itens-descricao.
       me->ls_itens-preco     = me->ls_fieldcat_itens-preco.
 
+      add 1 to id_item. "incrementa o id auto incrementado
+
       "passamos a estrutura para a tabela interna da classe
       append me->ls_itens to me->it_itens.
+      clear me->ls_itens.
 
     endloop.
 
@@ -229,6 +241,9 @@ CLASS ZCL_ITENS IMPLEMENTATION.
       result-rc = sy-subrc.
       result-mensagem = 'Itens inseridos com sucesso.'.
     endif.
+
+    refresh me->it_itens.
+    clear id_item.
 
   endmethod.
 
