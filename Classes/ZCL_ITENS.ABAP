@@ -241,8 +241,10 @@ CLASS ZCL_ITENS IMPLEMENTATION.
       result-rc = sy-subrc.
       result-mensagem = 'Itens inseridos com sucesso.'.
     endif.
-
+    
+    "limpa atributos de classe e dados
     refresh me->it_itens.
+    refresh me->it_fieldcat_itens.
     clear id_item.
 
   endmethod.
