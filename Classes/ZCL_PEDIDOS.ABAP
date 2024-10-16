@@ -22,10 +22,13 @@ class zcl_pedidos definition
         !fieldcatalog type lvc_t_fcat .
     methods insert_pedido
       importing
-        !nome     type zclientes-nome_cliente
-        !valor    type zpedidos-valor_total
+        !id_cliente type zclientes-id_cliente optional
+        !nome       type zclientes-nome_cliente
+        !valor      type zpedidos-valor_total
+        !produtos   type zfieldcat_itens_tt
       exporting
-        !e_result type zapr_result .
+        !itens_table type ZFIELDCAT_ITENS_TT
+        !e_result   type zapr_result .
     class-methods edit_pedido
       importing
         !nome      type zclientes-nome_cliente
@@ -162,29 +165,23 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method edit_pedido.
 
-*    data: id_pedido4 type zpedidos-id_pedido.     "id do pedido
-*    data: data_pedido4 type zpedidos-data_inicio. "data do pedido
-*    data: ls_pedido4 type zpedidos.               "estrutura do pedido
-*
-*    id_pedido4   = zcl_pedidos=>get_id( indexline = indexline ).          "recebe o id do pedido
-*    data_pedido4 = zcl_pedidos=>get_data_pedido( indexline = indexline ). "recebe a data do pedido
-*
-*    preenche a estrutura
-*    ls_pedido4-id_pedido    = id_pedido4.
-*    ls_pedido4-nome_cliente = nome.
-*    ls_pedido4-valor_total  = valor.
-*    ls_pedido4-status       = status.
-*    ls_pedido4-data_inicio  = data_pedido4.
-*
-*    modify zpedidos from ls_pedido4. "altera o pedido na base de dados
-*
-*    if sy-subrc eq 0.
-*      e_result-rc = sy-subrc.
-*      e_result-mensagem = | Informações do pedido alteradas com sucesso  |.
-*    else.
-*      e_result-rc = sy-subrc.
-*      e_result-mensagem = | Não foi possível realizar as alterações  |.
-*    endif.
+    data: id_pedido4 type zpedidos-id_pedido.     "id do pedido
+
+    id_pedido4   = zcl_pedidos=>get_id( indexline = indexline ). "recebe o id do pedido
+
+    "atualiza os campos da tabela
+    update zpedidos
+      set valor_total = valor
+          status      = status
+      where id_pedido eq id_pedido4.
+
+    if sy-subrc eq 0.
+      e_result-rc = sy-subrc.
+      e_result-mensagem = | Informações do pedido alteradas com sucesso  |.
+    else.
+      e_result-rc = sy-subrc.
+      e_result-mensagem = | Não foi possível realizar as alterações  |.
+    endif.
 
   endmethod.
 
@@ -246,8 +243,11 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
 * <SIGNATURE>---------------------------------------------------------------------------------------+
 * | Instance Public Method ZCL_PEDIDOS->INSERT_PEDIDO
 * +-------------------------------------------------------------------------------------------------+
+* | [--->] ID_CLIENTE                     TYPE        ZCLIENTES-ID_CLIENTE(optional)
 * | [--->] NOME                           TYPE        ZCLIENTES-NOME_CLIENTE
 * | [--->] VALOR                          TYPE        ZPEDIDOS-VALOR_TOTAL
+* | [--->] PRODUTOS                       TYPE        ZFIELDCAT_ITENS_TT
+* | [<---] ITENS_TABLE                    TYPE        ZFIELDCAT_ITENS_TT
 * | [<---] E_RESULT                       TYPE        ZAPR_RESULT
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method insert_pedido.
@@ -256,34 +256,83 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
           ls_pedido2 type zpedidos.
 
     data: ol_cliente type ref to zcl_clientes.
+    data: ol_item    type ref to zcl_itens.
 
     id_pedido = zcl_pedidos=>get_next( ). "método de auto incremento
 
-    "o cliente é criado no momento da criacao do pedido
-    "tem de se criar o cliente antes do pedido
+    if id_cliente is initial. "se o id do cliente nao for enviado...
 
-    create object ol_cliente.
+      "o cliente é criado no momento da criacao do pedido
+      "tem de se criar o cliente antes do pedido
 
-    "metodo para cadastrar novos clientes.
-    ol_cliente->insert_cliente(
-      exporting
-        nome_cliente = nome
-      importing
-        e_result     = e_result
-    ).
+      create object ol_cliente.
 
-    if sy-subrc ne 0.
-      return.
+      "metodo para cadastrar novos clientes.
+      ol_cliente->insert_cliente(
+        exporting
+          nome_cliente = nome
+        importing
+          e_result     = e_result
+      ).
+
+      if sy-subrc ne 0.
+        return.
+      endif.
+
+      "o item também é criado antes da criacao do pedido
+
+      create object ol_item.
+
+      "método para inserir os itens comprados
+      ol_item->insert_item(
+        exporting
+          id_pedido = id_pedido
+          itens_table = produtos
+        importing
+          result = e_result
+      ).
+
+      if sy-subrc ne 0.
+        return.
+      endif.
+
+      "preenche a estrutura com os dados
+      ls_pedido2-id_pedido    = id_pedido.
+      ls_pedido2-id_cliente   = ol_cliente->ls_clientes-id_cliente. "recebe o id do cliente cadastrado
+      ls_pedido2-valor_total  = valor.
+      ls_pedido2-data_inicio  = sy-datum.
+      ls_pedido2-status       = 'PENDENTE'.
+
+      insert zpedidos from ls_pedido2. "insere o novo pedido na tabela
+
+    else. "do contrário, criamos apenas o pedido enviando o id do parametro
+
+      "o item também é criado antes da criacao do pedido
+      create object ol_item.
+
+      "método para inserir os itens comprados
+      ol_item->insert_item(
+        exporting
+          id_pedido = id_pedido
+          itens_table = produtos
+        importing
+          result = e_result
+      ).
+
+      if sy-subrc ne 0.
+        return.
+      endif.
+
+      "preenche a estrutura com os dados
+      ls_pedido2-id_pedido    = id_pedido.
+      ls_pedido2-id_cliente   = id_cliente.
+      ls_pedido2-valor_total  = valor.
+      ls_pedido2-data_inicio  = sy-datum.
+      ls_pedido2-status       = 'PENDENTE'.
+
+      insert zpedidos from ls_pedido2. "insere o novo pedido na tabela
+
     endif.
-
-    "preenche a estrutura com os dados
-    ls_pedido2-id_pedido    = id_pedido.
-    ls_pedido2-id_cliente   = ol_cliente->ls_clientes-id_cliente. "recebe o id do cliente cadastrado
-    ls_pedido2-valor_total  = valor.
-    ls_pedido2-data_inicio  = sy-datum.
-    ls_pedido2-status       = 'PENDENTE'.
-
-    insert zpedidos from ls_pedido2. "insere o novo pedido na tabela
 
     if sy-subrc eq 0.
       e_result-rc = sy-subrc.
@@ -296,6 +345,7 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
     endif.
 
     free ol_cliente.
+    free ol_item.
 
   endmethod.
 
@@ -338,21 +388,21 @@ CLASS ZCL_PEDIDOS IMPLEMENTATION.
         on p~id_cliente eq c~id_cliente
         into table @pedidos_clientes.
 
-     else.
+    else.
 
-        "retorna a tabela com uma linha
-        select p~id_pedido,
-               c~nome_cliente,
-               p~valor_total,
-               p~data_inicio,
-               p~status
-          from zpedidos as p
-          inner join zclientes as c
-          on p~id_cliente eq c~id_cliente
-          into table @pedidos_clientes
-          where id_pedido eq @id_pedido.
+      "retorna a tabela com uma linha
+      select p~id_pedido,
+             c~nome_cliente,
+             p~valor_total,
+             p~data_inicio,
+             p~status
+        from zpedidos as p
+        inner join zclientes as c
+        on p~id_cliente eq c~id_cliente
+        into table @pedidos_clientes
+        where id_pedido eq @id_pedido.
 
-      endif.
+    endif.
 
   endmethod.
 ENDCLASS.
