@@ -17,19 +17,40 @@ module user_command_0200 input.
       perform insert_pedido.
 
     when 'FCT_ADICIONAR'.
-
-      ls_fieldcat_itens-descricao = 'item'.
-      ls_fieldcat_itens-quantidade = 1.
-      ls_fieldcat_itens-preco = 200.
-
-      append ls_fieldcat_itens to it_fieldcat_itens.
-
+      perform add_item_container.          "adiciona item ao container
       perform build_catalog_itens.         "controi o catalogo de campos de itens
       perform build_container_itens.       "criacao do container de itens
 
   endcase.
 
 endmodule.
+
+form add_item_container.
+
+  if ol_item is initial.
+    "objeto de referencia a classe de itens
+    create object ol_item.
+  endif.
+
+  "metodo para adiciona o produto ao catalogo
+  ol_item->add_item_catalog(
+    exporting
+      descricao   = in_produto2
+      quantidade  = in_quantidade2
+      preco       = in_preco2
+    importing
+      itens_table = it_fieldcat_itens
+      result      = result
+  ).
+
+  if sy-subrc eq 0.
+    perform display_alv_container_itens. "recarrega o container
+    message result-mensagem type 'S'.
+  else.
+    message result-mensagem type 'S' display like 'E'.
+  endif.
+
+endform.
 
 form build_catalog_itens.
 
