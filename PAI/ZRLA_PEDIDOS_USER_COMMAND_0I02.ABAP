@@ -40,11 +40,12 @@ form add_item_container.
       preco       = in_preco2
     importing
       itens_table = it_fieldcat_itens
+      valor_total = in_valor_total
       result      = result
   ).
 
   if sy-subrc eq 0.
-    perform display_alv_container_itens. "recarrega o container
+    perform display_alv_container_itens.  "recarrega o container
     message result-mensagem type 'S'.
   else.
     message result-mensagem type 'S' display like 'E'.
@@ -126,7 +127,7 @@ form display_alv_container_itens.
 
 endform.
 
-form insert_pedido.
+form insert_pedido. "LIMPAR TUDO!!!!
 
   "verifica se os campos foram preenchidos
   if in_nome_cliente is initial and in_clienteantigo is initial or in_valor_total is initial.
@@ -134,6 +135,9 @@ form insert_pedido.
     return.
   elseif in_nome_cliente is not initial and in_clienteantigo is not initial.
     message 'Escolha entre um cliente antigo ou um novo' type 'S' display like 'E'.
+    return.
+  elseif it_fieldcat_itens is initial.
+    message 'Escolha o(s) produtos da compra' type 'I'.
     return.
   endif.
 
@@ -149,6 +153,7 @@ form insert_pedido.
         id_cliente = in_clienteantigo
         nome       = in_nome_cliente
         valor      = in_valor_total
+        produtos   = it_fieldcat_itens
       importing
         e_result = result
     ).
@@ -161,8 +166,9 @@ form insert_pedido.
     "insere um novo pedido juntamente com um novo cliente
     ol_criacao_pedido->insert_pedido(
       exporting
-        nome     = in_nome_cliente
-        valor    = in_valor_total
+        nome       = in_nome_cliente
+        valor      = in_valor_total
+        produtos   = it_fieldcat_itens
       importing
         e_result = result
     ).
@@ -174,5 +180,19 @@ form insert_pedido.
   else.
     message result-mensagem type 'S' display like 'E'.
   endif.
+
+  free ol_alvgrid2.
+  free ol_container2.
+  free ol_criacao_pedido.
+  free ol_criacao_cliente.
+  refresh it_fieldcat_itens.
+  clear in_clienteantigo.
+  clear in_nome_cliente.
+  clear in_produto2.
+  clear in_preco2.
+  clear in_quantidade2.
+  clear in_valor_total.
+
+  perform display_alv_container_itens.
 
 endform.
