@@ -14,7 +14,8 @@ module user_command_0200 input.
       call screen '100'.
 
     when 'FCT_INSERIR'.
-      perform insert_pedido.
+      perform insert_pedido.               "insere o pedido / cliente / produtos na base de dados
+      perform display_alv_container_itens. "refresh alv container
 
     when 'FCT_ADICIONAR'.
       perform add_item_container.          "adiciona item ao container
@@ -127,7 +128,7 @@ form display_alv_container_itens.
 
 endform.
 
-form insert_pedido. "LIMPAR TUDO!!!!
+form insert_pedido.
 
   "verifica se os campos foram preenchidos
   if in_nome_cliente is initial and in_clienteantigo is initial or in_valor_total is initial.
@@ -136,6 +137,7 @@ form insert_pedido. "LIMPAR TUDO!!!!
   elseif in_nome_cliente is not initial and in_clienteantigo is not initial.
     message 'Escolha entre um cliente antigo ou um novo' type 'S' display like 'E'.
     return.
+ "verifica se os produtos foram enviados
   elseif it_fieldcat_itens is initial.
     message 'Escolha o(s) produtos da compra' type 'I'.
     return.
@@ -160,6 +162,7 @@ form insert_pedido. "LIMPAR TUDO!!!!
 
   else.
 
+    "cria uma instancia do cliente para inseri-lo
     data: ol_criacao_cliente type ref to zcl_clientes.
     create object ol_criacao_cliente.
 
@@ -181,18 +184,13 @@ form insert_pedido. "LIMPAR TUDO!!!!
     message result-mensagem type 'S' display like 'E'.
   endif.
 
-  free ol_alvgrid2.
-  free ol_container2.
+    "limpa os objetos
   free ol_criacao_pedido.
   free ol_criacao_cliente.
-  refresh it_fieldcat_itens.
-  clear in_clienteantigo.
-  clear in_nome_cliente.
-  clear in_produto2.
-  clear in_preco2.
-  clear in_quantidade2.
-  clear in_valor_total.
+  free ol_item.
 
-  perform display_alv_container_itens.
+  "limpa campos e tabela de itens
+  refresh it_fieldcat_itens.
+  clear: in_clienteantigo, in_nome_cliente, in_produto2, in_preco2, in_quantidade2, in_valor_total.
 
 endform.
