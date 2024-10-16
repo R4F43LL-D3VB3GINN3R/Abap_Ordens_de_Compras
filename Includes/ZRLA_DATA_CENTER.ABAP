@@ -22,6 +22,10 @@ data: in_nome_cliente  type zclientes-nome_cliente,  "campo nome do cliente
       in_clienteantigo type zclientes-id_cliente,    "campo nome do cliente com chave relacionada
       in_valor_total   type zpedidos-valor_total.    "campo valor total do pedido
 
+data: in_produto2    type zitens-descricao, "campo descricao do produto
+      in_quantidade2 type i,                "campo quantidade de produtos
+      in_preco2      type currency.         "campo preco em produtos comprados
+
 "300
 data: in_nome_cliente2 type zclientes-nome_cliente, "campo nome do cliente
       in_valor_total2  type zpedidos-valor_total,   "campo valor total do pedido
@@ -48,6 +52,7 @@ data: ls_itens type zitens.
 "INSTANCIAS DE CLASSES Z --
 
 data ol_pedidos type ref to zcl_pedidos.
+data: ol_item type ref to zcl_itens.
 
 "-------------------------------------------------------------------------------
 "OUTROS
@@ -61,7 +66,7 @@ data: result type zapr_result. "estrutura para retorno de operacoes
 "-------------------------------------------------------------------------------
 "ALV CONTAINER -- SCREEN 100
 
-data go_container    TYPE REF TO cl_gui_docking_container.
+data go_container    type ref to cl_gui_docking_container.
 
 "itens do alv container
 data: container100 type scrfname. "custom control
@@ -81,16 +86,9 @@ data: lt_rows type lvc_t_row,       "tabela para campos de multiselecao na alv
 "-------------------------------------------------------------------------------
 "ALV CONTAINER -- SCREEN 200
 
-"campos do catalogo de
-types: begin of fieldcat_itens,
-  descricao  type zitens-descricao,
-  quantidade type i,
-  preco      type currency,
-end of fieldcat_itens.
-
-"tabela e estrutura do work area
-data: it_fieldcat_itens type table of fieldcat_itens,
-      ls_fieldcat_itens type fieldcat_itens.
+"catalogo de campos do carrinho de itens
+data: it_fieldcat_itens type zfieldcat_itens_tt,
+      ls_fieldcat_itens type zfieldcat_itens_st.
 
 "itens do alv container
 data: container200 type scrfname. "custom control
