@@ -6,12 +6,11 @@ class zcl_itens definition
   public section.
 
     data:
-      it_itens type table of zitens_tt .
+      it_itens type zitens_tt .
     data ls_itens type zitens_st .
-
     "catalogo de campos
-    data: it_fieldcat_itens type zfieldcat_itens_tt,
-          ls_fieldcat_itens type zfieldcat_itens_st.
+    data it_fieldcat_itens type zfieldcat_itens_tt .
+    data ls_fieldcat_itens type zfieldcat_itens_st .
 
     methods construtor
       importing
@@ -29,14 +28,22 @@ class zcl_itens definition
         value(id) type zitens-id_item .
     methods add_item_catalog
       importing
-        descricao   type zitens-descricao
-        quantidade  type i
-        preco       type zitens-preco
+        !descricao   type zitens-descricao
+        !quantidade  type i
+        !preco       type zitens-preco
       exporting
-        itens_table type zfieldcat_itens_tt
-        result      type zapr_result.
+        !itens_table type zfieldcat_itens_tt
+        !valor_total type currency
+        !result      type zapr_result .
+    methods insert_item
+      exporting
+        !result      type zapr_result.
   protected section.
   private section.
+
+    methods get_valor_total
+      returning
+        value(total) type currency .
 ENDCLASS.
 
 
@@ -51,6 +58,7 @@ CLASS ZCL_ITENS IMPLEMENTATION.
 * | [--->] QUANTIDADE                     TYPE        I
 * | [--->] PRECO                          TYPE        ZITENS-PRECO
 * | [<---] ITENS_TABLE                    TYPE        ZFIELDCAT_ITENS_TT
+* | [<---] VALOR_TOTAL                    TYPE        CURRENCY
 * | [<---] RESULT                         TYPE        ZAPR_RESULT
 * +--------------------------------------------------------------------------------------</SIGNATURE>
   method add_item_catalog.
@@ -76,9 +84,11 @@ CLASS ZCL_ITENS IMPLEMENTATION.
     "passa a tabela para o parametro de exportacao
     itens_table = me->it_fieldcat_itens.
 
+    valor_total = me->get_valor_total( ). "recebe o valor total da compra
+
     if sy-subrc eq 0.
       result-rc = sy-subrc.
-      result-mensagem = | Novo item adicionado: { descricao } - Total: €{ me->ls_fieldcat_itens-preco } |.
+      result-mensagem = 'Novo item adicionado: ' && descricao && ' - Total: €' && me->ls_fieldcat_itens-preco.
     else.
       result-rc = sy-subrc.
       result-mensagem = | Não foi possível adicionar o item ao carrinho |.
@@ -170,6 +180,55 @@ CLASS ZCL_ITENS IMPLEMENTATION.
        into id.
 
     add 1 to id.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_ITENS->GET_VALOR_TOTAL
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] TOTAL                          TYPE        CURRENCY
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method get_valor_total.
+
+    "busca o valor de cada preco na tabela atributo de classe
+    loop at me->it_fieldcat_itens into me->ls_fieldcat_itens.
+      total = total + me->ls_fieldcat_itens-preco. "incrementa o valor do preço
+    endloop.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ITENS->INSERT_ITEM
+* +-------------------------------------------------------------------------------------------------+
+* | [<---] RESULT                         TYPE        ZAPR_RESULT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method insert_item.
+
+    "iteramos sobre o atributo tabela que já foi preenchido pelo método add_item_catalog
+    loop at me->it_fieldcat_itens into me->ls_fieldcat_itens.
+
+      "a partir desta tabela preenchemos a estrutura da classe
+      me->ls_itens-id_item   = zcl_itens=>get_next( ).
+      me->ls_itens-descricao = me->ls_fieldcat_itens-descricao.
+      me->ls_itens-preco     = me->ls_fieldcat_itens-preco.
+
+      "passamos a estrutura para a tabela interna da classe
+      append me->ls_itens to me->it_itens.
+
+    endloop.
+
+    "inserimos a tabela da classe diretamente a ba  se de dados
+    insert zitens from table me->it_itens.
+
+    if sy-subrc ne 0.
+      result-rc = sy-subrc.
+      result-mensagem = 'Erro ao inserir itens na base de dados'.
+    else.
+      result-rc = sy-subrc.
+      result-mensagem = 'Itens inseridos com sucesso.'.
+    endif.
 
   endmethod.
 
