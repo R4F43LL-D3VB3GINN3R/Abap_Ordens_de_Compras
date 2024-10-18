@@ -26,8 +26,26 @@ module user_command_0200 input.
 
 endmodule.
 
+form remove_item.
+  message 'aaaaaaaaaaaaaaaaaa' type 'S'.
+endform.
+
 form add_item_container.
 
+"REPOR APÓS TESTES
+"---------------------------------------------------------------------------
+
+*  "verificacao de campos
+*  if in_produto2    is initial or
+*     in_quantidade2 is initial or
+*     in_preco2      is initial.
+*    message 'Insira os dados referente as informações do produto' type 'I'.
+*    return.
+*  endif.
+
+"---------------------------------------------------------------------------
+
+  "verifica se a classe está instanciada
   if ol_item is initial.
     "objeto de referencia a classe de itens
     create object ol_item.
@@ -45,6 +63,7 @@ form add_item_container.
       result      = result
   ).
 
+  "se o objeto foi inserido...
   if sy-subrc eq 0.
     perform display_alv_container_itens.  "recarrega o container
     message result-mensagem type 'S'.
@@ -95,6 +114,14 @@ form build_container_itens.
         error_cntl_link   = 3
         error_dp_create   = 4
         others            = 5.
+
+    create object ol_event_handler2.
+
+    "métodos para inserir botoes na toolbar.
+    set handler ol_event_handler2->handle_toolbar for ol_alvgrid2.
+
+    "fica a escuta de um clique de botao
+    set handler ol_event_handler2->handle_user_command for ol_alvgrid2.
 
   endif.
 
