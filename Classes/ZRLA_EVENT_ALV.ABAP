@@ -50,27 +50,20 @@ class zcl_event_handler implementation.
 
     "cria os botoes
     clear ls_toolbar.
-    ls_toolbar-function  = 'FCT_EXPORT_PDF'.
-    ls_toolbar-icon      = ICON_PDF .
+    ls_toolbar-function  = 'FCT_REMOVE_ITEM'.
+    ls_toolbar-icon      = ICON_REMOVE .
     ls_toolbar-butn_type = 0.
-    ls_toolbar-text      = 'Enviar PDF'.
-    append ls_toolbar to e_object->mt_toolbar.
-
-    clear ls_toolbar.
-    ls_toolbar-function  = 'FCT_EMAIL_PCT'.
-    ls_toolbar-icon      = ICON_MAIL  .
-    ls_toolbar-butn_type = 0.
-    ls_toolbar-text      = 'Enviar Email'.
+    ls_toolbar-text      = 'Remover Item'.
     append ls_toolbar to e_object->mt_toolbar.
 
   endmethod.
 
   method handle_user_command.
 
-*    case e_ucomm.
-*      when 'FCT_EXPORT_PDF'.
-*        perform get_data_pdf.
-*    endcase.
+    case e_ucomm.
+      when 'FCT_REMOVE_ITEM'.
+        perform remove_item.
+    endcase.
 
   endmethod.
 
