@@ -1,45 +1,51 @@
-class zcl_itens definition
+class ZCL_ITENS definition
   public
   final
   create public .
 
-  public section.
+public section.
 
-    data it_itens type zitens_tt .
-    data ls_itens type zitens_st .
+  data IT_ITENS type ZITENS_TT .
+  data LS_ITENS type ZITENS_ST .
     "catalogo de campos
-    data it_fieldcat_itens type zfieldcat_itens_tt .
-    data ls_fieldcat_itens type zfieldcat_itens_st .
+  data IT_FIELDCAT_ITENS type ZFIELDCAT_ITENS_TT .
+  data LS_FIELDCAT_ITENS type ZFIELDCAT_ITENS_ST .
 
-    methods construtor
-      importing
-        !id       type zitens-id_item
-      exporting
-        !e_result type zapr_result .
-    class-methods load_itens
-      returning
-        value(itens) type zitens_tt .
-    class-methods build_catalog_itens
-      exporting
-        !fieldcatalog type lvc_t_fcat .
-    class-methods get_next
-      returning
-        value(id) type zitens-id_item .
-    methods add_item_catalog
-      importing
-        !descricao   type zitens-descricao
-        !quantidade  type i
-        !preco       type zitens-preco
-      exporting
-        !itens_table type zfieldcat_itens_tt
-        !valor_total type currency
-        !result      type zapr_result .
-    methods insert_item
-      importing
-        !id_pedido   type zitens-id_pedido
-        !itens_table type zfieldcat_itens_tt
-      exporting
-        !result      type zapr_result .
+  methods CONSTRUTOR
+    importing
+      !ID type ZITENS-ID_ITEM
+    exporting
+      !E_RESULT type ZAPR_RESULT .
+  class-methods LOAD_ITENS
+    returning
+      value(ITENS) type ZITENS_TT .
+  class-methods BUILD_CATALOG_ITENS
+    exporting
+      !FIELDCATALOG type LVC_T_FCAT .
+  class-methods GET_NEXT
+    returning
+      value(ID) type ZITENS-ID_ITEM .
+  methods ADD_ITEM_CATALOG
+    importing
+      !DESCRICAO type ZITENS-DESCRICAO
+      !QUANTIDADE type I
+      !PRECO type ZITENS-PRECO
+    exporting
+      !ITENS_TABLE type ZFIELDCAT_ITENS_TT
+      !VALOR_TOTAL type CURRENCY
+      !RESULT type ZAPR_RESULT .
+  methods REMOVE_ITEM_CATALOG
+    importing
+      !IT_LINES type LVC_T_ROW
+    exporting
+      !ITENS_TABLE type ZFIELDCAT_ITENS_TT
+      !RESULT type ZAPR_RESULT .
+  methods INSERT_ITEM
+    importing
+      !ID_PEDIDO type ZITENS-ID_PEDIDO
+      !ITENS_TABLE type ZFIELDCAT_ITENS_TT
+    exporting
+      !RESULT type ZAPR_RESULT .
   protected section.
   private section.
 
@@ -90,7 +96,7 @@ CLASS ZCL_ITENS IMPLEMENTATION.
 
     if sy-subrc eq 0.
       result-rc = sy-subrc.
-      result-mensagem = 'Novo item adicionado: ' && descricao && ' - Total: €' && me->ls_fieldcat_itens-preco.
+      result-mensagem = 'Novo item adicionado:' && ' ' && descricao && ' - Total: ' && ' ' && '€' && me->ls_fieldcat_itens-preco.
     else.
       result-rc = sy-subrc.
       result-mensagem = | Não foi possível adicionar o item ao carrinho |.
@@ -231,7 +237,7 @@ CLASS ZCL_ITENS IMPLEMENTATION.
 
     endloop.
 
-    "inserimos a tabela da classe diretamente a ba  se de dados
+    "inserimos a tabela da classe diretamente a base de dados
     insert zitens from table me->it_itens.
 
     if sy-subrc ne 0.
@@ -241,7 +247,7 @@ CLASS ZCL_ITENS IMPLEMENTATION.
       result-rc = sy-subrc.
       result-mensagem = 'Itens inseridos com sucesso.'.
     endif.
-    
+
     "limpa atributos de classe e dados
     refresh me->it_itens.
     refresh me->it_fieldcat_itens.
@@ -263,6 +269,33 @@ CLASS ZCL_ITENS IMPLEMENTATION.
       into table itens.
 
     sort itens by id_item.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_ITENS->REMOVE_ITEM_CATALOG
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IT_LINES                       TYPE        LVC_T_ROW
+* | [<---] ITENS_TABLE                    TYPE        ZFIELDCAT_ITENS_TT
+* | [<---] RESULT                         TYPE        ZAPR_RESULT
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method remove_item_catalog.
+
+    "itera sobre a tabela de entrada e retorna a tabela com as linhas removidas
+    loop at it_lines into data(ls_lines).
+      read table itens_table into data(ls_table) index ls_lines-index.
+        delete itens_table index sy-tabix.
+        delete me->it_fieldcat_itens index sy-tabix.
+    endloop.
+
+    if sy-subrc eq 0.
+      result-rc = sy-subrc.
+      result-mensagem = | { lines( it_lines ) } itens removidos |.
+    else.
+      result-rc = sy-subrc.
+      result-mensagem = | Não foi possível remover os itens |.
+    endif.
 
   endmethod.
 ENDCLASS.
