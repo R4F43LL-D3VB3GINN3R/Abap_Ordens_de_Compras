@@ -26,24 +26,45 @@ module user_command_0200 input.
 
 endmodule.
 
-form remove_item.
-  message 'aaaaaaaaaaaaaaaaaa' type 'S'.
+form remove_item. "remove itens do carrinho
+
+  "metodo para pegar os campos selecionados na alv
+    call method ol_alvgrid2->get_selected_rows
+      importing
+        et_index_rows = lt_rows2.
+
+    "nao esquecer de ordenar desta forma antes de excluir linhas de tabela por index
+    sort lt_rows2 by index descending.
+
+    ol_item->remove_item_catalog(
+      exporting
+        it_lines    = lt_rows2
+      importing
+        itens_table = it_fieldcat_itens
+        result      = result
+    ).
+
+    if result-rc eq 0.
+      message result-mensagem type 'S'.
+    else.
+      message result-mensagem type 'S' display like 'E'.
+    endif.
+
+    refresh: lt_rows2.
+
+    perform display_alv_container_itens. "refresh alv container
+
 endform.
 
 form add_item_container.
 
-"REPOR APÓS TESTES
-"---------------------------------------------------------------------------
-
-*  "verificacao de campos
-*  if in_produto2    is initial or
-*     in_quantidade2 is initial or
-*     in_preco2      is initial.
-*    message 'Insira os dados referente as informações do produto' type 'I'.
-*    return.
-*  endif.
-
-"---------------------------------------------------------------------------
+  "verificacao de campos
+  if in_produto2    is initial or
+     in_quantidade2 is initial or
+     in_preco2      is initial.
+    message 'Insira os dados referente as informações do produto' type 'I'.
+    return.
+  endif.
 
   "verifica se a classe está instanciada
   if ol_item is initial.
